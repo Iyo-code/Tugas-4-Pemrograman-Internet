@@ -5,15 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Mahasiswa extends Model
+class Fakultas extends Model
 {
     use HasFactory;
 
-    protected $table = 'mahasiswa';
-    protected $fillable = ['nim', 'nama', 'prodi_id'];
+    protected $table = 'fakultas';
+    protected $fillable = ['nama_fakultas'];
 
     public function prodi()
     {
-        return $this->belongsTo(Prodi::class);
+        return $this->hasMany(Prodi::class);
     }
 }
+
