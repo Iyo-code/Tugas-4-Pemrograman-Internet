@@ -12,7 +12,9 @@ Route::get('/', function () {
 
 // Resource utama Mahasiswa (CRUD)
 Route::resource('mahasiswa', MahasiswaController::class);
-Route::resource('fakultas', FakultasController::class);
+Route::resource('fakultas', FakultasController::class)->parameters([
+    'fakultas' => 'fakultas'
+]);
 Route::resource('prodi', ProdiController::class);
 
 // AJAX: ambil data prodi berdasarkan fakultas

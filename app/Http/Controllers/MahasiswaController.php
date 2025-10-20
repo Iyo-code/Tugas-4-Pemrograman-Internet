@@ -11,27 +11,41 @@ use Illuminate\Support\Facades\DB;
 class MahasiswaController extends Controller
 {
     /**
-     * Tampilkan semua data mahasiswa + fitur pencarian
+     * Tampilkan semua data mahasiswa + fitur pencarian + filter fakultas/prodi
      */
     public function index(Request $request)
     {
         $keyword = $request->input('search');
+        $fakultas_id = $request->input('fakultas_id');
+        $prodi_id = $request->input('prodi_id');
 
-        $mahasiswa = Mahasiswa::with('prodi.fakultas')
-            ->when($keyword, function ($query, $keyword) {
-                $query->where('nama', 'like', "%{$keyword}%")
-                      ->orWhere('nim', 'like', "%{$keyword}%")
-                      ->orWhereHas('prodi', function ($q) use ($keyword) {
-                          $q->where('nama_prodi', 'like', "%{$keyword}%");
-                      })
-                      ->orWhereHas('prodi.fakultas', function ($q) use ($keyword) {
-                          $q->where('nama_fakultas', 'like', "%{$keyword}%");
-                      });
-            })
-            ->orderBy('id', 'asc')
-            ->get();
+        $query = Mahasiswa::with('prodi.fakultas');
 
-        return view('index', compact('mahasiswa', 'keyword'));
+        // Filter pencarian umum (nama, nim)
+        if ($keyword) {
+            $query->where(function ($q) use ($keyword) {
+                $q->where('nama', 'like', "%{$keyword}%")
+                  ->orWhere('nim', 'like', "%{$keyword}%");
+            });
+        }
+
+        // Filter berdasarkan fakultas
+        if ($fakultas_id) {
+            $query->whereHas('prodi.fakultas', function ($q) use ($fakultas_id) {
+                $q->where('id', $fakultas_id);
+            });
+        }
+
+        // Filter berdasarkan prodi
+        if ($prodi_id) {
+            $query->where('prodi_id', $prodi_id);
+        }
+
+        $mahasiswa = $query->orderBy('id', 'asc')->get();
+        $fakultas = Fakultas::orderBy('nama_fakultas')->get();
+        $prodi = Prodi::orderBy('nama_prodi')->get();
+
+        return view('index', compact('mahasiswa', 'keyword', 'fakultas', 'prodi'));
     }
 
     /**
@@ -97,13 +111,14 @@ class MahasiswaController extends Controller
     {
         $mahasiswa->delete();
 
+        // Reset auto increment di SQLite (tidak wajib di MySQL)
         DB::statement("DELETE FROM sqlite_sequence WHERE name='mahasiswa'");
 
         return redirect()->route('mahasiswa.index')->with('success', 'Data mahasiswa berhasil dihapus.');
     }
 
     /**
-     * AJAX: Ambil Prodi berdasarkan Fakultas
+     * AJAX: Ambil daftar Prodi berdasarkan Fakultas
      */
     public function getProdiByFakultas($fakultas_id)
     {

@@ -17,14 +17,37 @@
       </a>
     </div>
 
-    {{-- Navigasi dan Pencarian --}}
-    <div class="flex flex-col sm:flex-row justify-between items-center mb-6 space-y-3 sm:space-y-0 sm:space-x-3">
-      {{-- Form Pencarian --}}
-      <form method="GET" action="{{ route('mahasiswa.index') }}" 
-            class="flex items-center w-full sm:w-auto space-x-2">
-        <input type="text" name="search" value="{{ $keyword ?? '' }}"
-               placeholder="Cari nama, NIM, prodi, fakultas..."
-               class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 w-full sm:w-72">
+    {{-- Navigasi, Filter, dan Pencarian --}}
+    <div class="flex flex-col lg:flex-row justify-between items-center mb-6 gap-3">
+
+      {{-- Form Pencarian & Filter --}}
+      <form method="GET" action="{{ route('mahasiswa.index') }}" class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+        <input type="text" name="search" value="{{ request('search') }}"
+               placeholder="Cari nama, NIM..."
+               class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 w-full sm:w-60">
+
+        {{-- Filter Fakultas --}}
+        <select name="fakultas_id" 
+                class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400">
+          <option value="">Semua Fakultas</option>
+          @foreach ($fakultas as $f)
+            <option value="{{ $f->id }}" {{ request('fakultas_id') == $f->id ? 'selected' : '' }}>
+              {{ $f->nama_fakultas }}
+            </option>
+          @endforeach
+        </select>
+
+        {{-- Filter Prodi --}}
+        <select name="prodi_id" 
+                class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400">
+          <option value="">Semua Prodi</option>
+          @foreach ($prodi as $p)
+            <option value="{{ $p->id }}" {{ request('prodi_id') == $p->id ? 'selected' : '' }}>
+              {{ $p->nama_prodi }}
+            </option>
+          @endforeach
+        </select>
+
         <button type="submit"
                 class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200 shadow-sm">
           🔍 Cari
@@ -102,6 +125,34 @@
       &copy; {{ date('Y') }} - Sistem Data Mahasiswa | 
       <span class="font-medium text-gray-600">Trio Suro Wibowo</span>
     </footer>
+
+    <script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const fakultasSelect = document.querySelector('select[name="fakultas_id"]');
+    const prodiSelect = document.querySelector('select[name="prodi_id"]');
+
+    fakultasSelect.addEventListener('change', function () {
+      const fakultasId = this.value;
+
+      prodiSelect.innerHTML = '<option value="">Semua Prodi</option>';
+
+      if (fakultasId) {
+        fetch(`/get-prodi/${fakultasId}`)
+          .then(response => response.json())
+          .then(data => {
+            data.forEach(prodi => {
+              const option = document.createElement('option');
+              option.value = prodi.id;
+              option.textContent = prodi.nama_prodi;
+              prodiSelect.appendChild(option);
+            });
+          })
+          .catch(error => console.error('Gagal memuat data prodi:', error));
+      }
+    });
+  });
+</script>
+
   </div>
 </body>
 </html>

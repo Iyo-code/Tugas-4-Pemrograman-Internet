@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Fakultas;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class FakultasController extends Controller
 {
@@ -25,9 +26,12 @@ class FakultasController extends Controller
         return redirect()->back()->with('success', 'Fakultas berhasil ditambahkan!');
     }
 
-    public function destroy(Fakultas $fakulta)
+    public function destroy(Fakultas $fakultas)
     {
-        $fakulta->delete();
-        return redirect()->back()->with('success', 'Fakultas berhasil dihapus!');
+        $fakultas->delete();
+
+        DB::statement("DELETE FROM sqlite_sequence WHERE name='fakultas'");
+
+        return redirect()->route('fakultas.index')->with('success', 'Fakultas berhasil dihapus.');
     }
 }

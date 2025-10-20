@@ -34,7 +34,9 @@ class ProdiController extends Controller
     public function destroy(Prodi $prodi)
     {
         $prodi->delete();
+
         DB::statement("DELETE FROM sqlite_sequence WHERE name='prodi'");
-        return redirect()->back()->with('success', 'Program studi berhasil dihapus.');
+
+        return redirect()->route('prodi.index')->with('success', 'Prodi berhasil dihapus.');
     }
 }
