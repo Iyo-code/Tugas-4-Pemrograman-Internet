@@ -19,16 +19,39 @@ class ProdiController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nama_prodi' => 'required|unique:prodi,nama_prodi',
+            'nama_prodi' => 'required|string|max:255|unique:prodi,nama_prodi',
             'fakultas_id' => 'required|exists:fakultas,id',
-             ], [
-            'nama_prodi.required' => 'Nama prodi wajib di isi.',
-            'fakultas_id.required' => 'Nama fakultas wajib di isi.',
+        ], [
+            'nama_prodi.required' => 'Nama prodi wajib diisi.',
+            'nama_prodi.unique' => 'Nama prodi sudah ada, gunakan nama lain.',
+            'fakultas_id.required' => 'Fakultas wajib dipilih.',
         ]);
 
         Prodi::create($request->only('nama_prodi', 'fakultas_id'));
 
         return redirect()->back()->with('success', 'Program studi berhasil ditambahkan.');
+    }
+
+    public function edit(Prodi $prodi)
+    {
+        $fakultas = Fakultas::all();
+        return view('edit-prodi', compact('prodi', 'fakultas'));
+    }
+
+    public function update(Request $request, Prodi $prodi)
+    {
+        $request->validate([
+            'nama_prodi' => 'required|string|max:255|unique:prodi,nama_prodi,' . $prodi->id,
+            'fakultas_id' => 'required|exists:fakultas,id',
+        ], [
+            'nama_prodi.required' => 'Nama prodi wajib diisi.',
+            'nama_prodi.unique' => 'Nama prodi sudah ada, gunakan nama lain.',
+            'fakultas_id.required' => 'Fakultas wajib dipilih.',
+        ]);
+
+        $prodi->update($request->only('nama_prodi', 'fakultas_id'));
+
+        return redirect()->route('prodi.index')->with('success', 'Data program studi berhasil diperbarui.');
     }
 
     public function destroy(Prodi $prodi)
