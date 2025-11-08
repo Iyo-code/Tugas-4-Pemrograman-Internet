@@ -18,7 +18,6 @@
         Daftar Program Studi
       </h1>
 
-      {{-- Tombol kembali --}}
       <a href="{{ route('mahasiswa.index') }}" 
          class="bg-gray-100 hover:bg-gray-200 text-blue-800 px-4 py-2 rounded-lg shadow-sm flex items-center gap-2 transition">
         <i data-lucide="arrow-left" class="w-5 h-5"></i> Kembali ke Mahasiswa
@@ -33,7 +32,7 @@
       </div>
     @endif
 
-    {{-- Validasi error (sekarang di atas form) --}}
+    {{-- Error --}}
     @if ($errors->any())
       <div class="bg-red-50 border border-red-400 text-red-600 px-4 py-3 rounded-md mb-6 shadow-sm">
         <div class="flex items-center gap-2 mb-1">
@@ -48,31 +47,70 @@
       </div>
     @endif
 
-    {{-- Form Tambah Prodi --}}
+    {{-- FORM PENCARIAN + FILTER (Hanya User) --}}
+    @if (auth()->user()->role !== 'admin')
     <div class="bg-white p-5 rounded-xl shadow-md border border-gray-200 mb-8">
-      <form action="{{ route('prodi.store') }}" method="POST" class="flex flex-col sm:flex-row items-center justify-between gap-4">
-        @csrf
-        <input type="text" name="nama_prodi" value="{{ old('nama_prodi') }}" placeholder="Masukkan nama program studi..."
-               class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 w-full sm:w-1/2">
+      <form method="GET" action="{{ route('prodi.index') }}" 
+            class="flex flex-wrap items-center gap-3">
 
+        {{-- Search --}}
+        <input type="text" name="search" value="{{ request('search') }}"
+               placeholder="Cari nama program studi..."
+               class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 w-full sm:w-64">
+
+        {{-- Filter fakultas --}}
         <select name="fakultas_id"
-                class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 w-full sm:w-1/3">
-          <option value="">-- Pilih Fakultas --</option>
+                class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400">
+          <option value="">Semua Fakultas</option>
           @foreach ($fakultas as $f)
-            <option value="{{ $f->id }}" {{ old('fakultas_id') == $f->id ? 'selected' : '' }}>
+            <option value="{{ $f->id }}" 
+              {{ request('fakultas_id') == $f->id ? 'selected' : '' }}>
               {{ $f->nama_fakultas }}
             </option>
           @endforeach
         </select>
 
+        {{-- Tombol search --}}
+        <button type="submit"
+                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200 shadow-sm flex items-center gap-2">
+          <i data-lucide="search" class="w-4 h-4"></i> Cari
+        </button>
+
+      </form>
+    </div>
+    @endif
+
+    {{-- Form Tambah Prodi (Admin Saja) --}}
+    @if (auth()->user()->role === 'admin')
+    <div class="bg-white p-5 rounded-xl shadow-md border border-gray-200 mb-8">
+      <form action="{{ route('prodi.store') }}" method="POST"
+            class="flex flex-col sm:flex-row items-center justify-between gap-4">
+        @csrf
+
+        {{-- Input nama prodi --}}
+        <input type="text" name="nama_prodi" value="{{ old('nama_prodi') }}"
+               placeholder="Masukkan nama prodi..."
+               class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 w-full sm:w-1/2">
+
+        {{-- Pilih fakultas --}}
+        <select name="fakultas_id"
+                class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 w-full sm:w-1/3">
+          <option value="">-- Pilih Fakultas --</option>
+          @foreach ($fakultas as $f)
+            <option value="{{ $f->id }}">{{ $f->nama_fakultas }}</option>
+          @endforeach
+        </select>
+
+        {{-- Tombol tambah --}}
         <button type="submit"
                 class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition duration-200 shadow-sm flex items-center gap-2">
           <i data-lucide="plus-circle" class="w-5 h-5"></i> Tambah Prodi
         </button>
       </form>
     </div>
+    @endif
 
-    {{-- Tabel Daftar Prodi --}}
+    {{-- Tabel Prodi --}}
     <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
       <table class="min-w-full">
         <thead class="bg-blue-700 text-white uppercase text-sm">
@@ -80,46 +118,57 @@
             <th class="px-6 py-3 text-left font-semibold">ID</th>
             <th class="px-6 py-3 text-left font-semibold">Nama Program Studi</th>
             <th class="px-6 py-3 text-left font-semibold">Fakultas</th>
+
+            @if (auth()->user()->role === 'admin')
             <th class="px-6 py-3 text-center font-semibold">Aksi</th>
+            @endif
           </tr>
         </thead>
+
         <tbody class="divide-y divide-gray-100">
           @forelse ($prodi as $p)
             <tr class="hover:bg-blue-50 transition duration-150">
               <td class="px-6 py-3">{{ $p->id }}</td>
               <td class="px-6 py-3">{{ $p->nama_prodi }}</td>
               <td class="px-6 py-3">{{ $p->fakultas->nama_fakultas ?? '-' }}</td>
+
+              {{-- Aksi hanya untuk admin --}}
+              @if (auth()->user()->role === 'admin')
               <td class="px-6 py-3 text-center">
                 <div class="flex justify-center items-center gap-4">
+
                   {{-- Edit --}}
-                  <a href="{{ route('prodi.edit', $p->id) }}" 
+                  <a href="{{ route('prodi.edit', $p->id) }}"
                      class="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 transition">
                     <i data-lucide="edit-2" class="w-4 h-4"></i> Edit
                   </a>
 
                   {{-- Hapus --}}
-                  <form action="{{ route('prodi.destroy', $p->id) }}" method="POST" 
-                        onsubmit="return confirm('Yakin ingin menghapus program studi ini?')" class="inline-block">
+                  <form action="{{ route('prodi.destroy', $p->id) }}" method="POST"
+                        onsubmit="return confirm('Yakin ingin menghapus program studi ini?')">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" 
-                            class="text-red-600 hover:text-red-800 font-medium flex items-center gap-1 transition">
+                    <button class="text-red-600 hover:text-red-800 font-medium flex items-center gap-1 transition">
                       <i data-lucide="trash-2" class="w-4 h-4"></i> Hapus
                     </button>
                   </form>
+
                 </div>
               </td>
+              @endif
+
             </tr>
           @empty
             <tr>
-              <td colspan="4" class="px-6 py-6 text-center text-gray-500">Belum ada data program studi.</td>
+              <td colspan="4" class="px-6 py-6 text-center text-gray-500">
+                Tidak ada data program studi.
+              </td>
             </tr>
           @endforelse
         </tbody>
       </table>
     </div>
 
-    {{-- Footer --}}
     <footer class="text-center text-gray-500 text-sm mt-8">
       &copy; {{ date('Y') }} - Sistem Data Mahasiswa | 
       <span class="font-medium text-gray-600">Trio Suro Wibowo</span>

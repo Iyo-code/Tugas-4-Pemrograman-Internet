@@ -12,18 +12,18 @@
     
     {{-- Header --}}
     <div class="flex flex-col sm:flex-row justify-between items-center mb-10 gap-4">
-      {{-- Judul --}}
       <h1 class="text-4xl font-extrabold text-blue-800 flex items-center gap-2">
         <i data-lucide="users" class="w-8 h-8 text-blue-700"></i>
         Daftar Mahasiswa
       </h1>
 
-      {{-- Kanan: Navigasi Fakultas & Prodi --}}
+      {{-- Navigasi Fakultas & Prodi --}}
       <div class="flex gap-2">
         <a href="{{ route('fakultas.index') }}" 
            class="bg-gray-100 hover:bg-gray-200 text-blue-800 px-4 py-2 rounded-lg shadow-sm flex items-center gap-2 transition">
            <i data-lucide="building-2" class="w-5 h-5"></i> Fakultas
         </a>
+
         <a href="{{ route('prodi.index') }}" 
            class="bg-gray-100 hover:bg-gray-200 text-blue-800 px-4 py-2 rounded-lg shadow-sm flex items-center gap-2 transition">
            <i data-lucide="graduation-cap" class="w-5 h-5"></i> Prodi
@@ -31,13 +31,14 @@
       </div>
     </div>
 
-    {{-- Navigasi dan Filter --}}
+    {{-- Filter --}}
     <div class="bg-white p-5 rounded-xl shadow-md border border-gray-200 mb-8">
       <div class="flex flex-col lg:flex-row items-center justify-between gap-4">
-        
-        {{-- Form Pencarian & Filter --}}
+
+        {{-- Form Filter --}}
         <form method="GET" action="{{ route('mahasiswa.index') }}" 
               class="flex flex-wrap items-center gap-3 w-full lg:w-auto flex-grow">
+
           <input type="text" name="search" value="{{ request('search') }}"
                  placeholder="Cari nama, NIM..."
                  class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 w-full sm:w-64">
@@ -71,11 +72,13 @@
           </button>
         </form>
 
-        {{-- Tombol Tambah Mahasiswa di pojok kanan --}}
+        {{-- Tombol Tambah — hanya admin --}}
+        @if (auth()->user()->role === 'admin')
         <a href="{{ route('mahasiswa.create') }}" 
            class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg shadow-md transition-all duration-200 flex items-center gap-2">
            <i data-lucide="plus-circle" class="w-5 h-5"></i> Tambah Mahasiswa
         </a>
+        @endif
 
       </div>
     </div>
@@ -88,7 +91,7 @@
       </div>
     @endif
 
-    {{-- Tabel Data --}}
+    {{-- Tabel --}}
     <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
       <table class="min-w-full">
         <thead class="bg-blue-700 text-white uppercase text-sm">
@@ -98,9 +101,14 @@
             <th class="px-6 py-3 text-left font-semibold">Nama</th>
             <th class="px-6 py-3 text-left font-semibold">Program Studi</th>
             <th class="px-6 py-3 text-left font-semibold">Fakultas</th>
+
+            {{-- Hanya admin yang bisa melihat kolom aksi --}}
+            @if (auth()->user()->role === 'admin')
             <th class="px-6 py-3 text-center font-semibold">Aksi</th>
+            @endif
           </tr>
         </thead>
+
         <tbody class="divide-y divide-gray-100">
           @forelse ($mahasiswa as $m)
             <tr class="hover:bg-blue-50 transition duration-150">
@@ -109,26 +117,32 @@
               <td class="px-6 py-3">{{ $m->nama }}</td>
               <td class="px-6 py-3">{{ $m->prodi->nama_prodi ?? '-' }}</td>
               <td class="px-6 py-3">{{ $m->prodi->fakultas->nama_fakultas ?? '-' }}</td>
+
+              {{-- Aksi edit & hapus khusus admin --}}
+              @if (auth()->user()->role === 'admin')
               <td class="px-6 py-3 text-center">
                 <div class="flex justify-center items-center gap-4">
+
                   {{-- Edit --}}
                   <a href="{{ route('mahasiswa.edit', $m->id) }}" 
                      class="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 transition">
                     <i data-lucide="edit-2" class="w-4 h-4"></i> Edit
                   </a>
-                  
+
                   {{-- Hapus --}}
-                  <form action="{{ route('mahasiswa.destroy', $m->id) }}" method="POST" 
-                        onsubmit="return confirm('Yakin ingin menghapus data ini?')" class="inline-block">
+                  <form action="{{ route('mahasiswa.destroy', $m->id) }}" method="POST"
+                        onsubmit="return confirm('Yakin ingin menghapus data ini?')">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" 
-                            class="text-red-600 hover:text-red-800 font-medium flex items-center gap-1 transition">
+                    <button class="text-red-600 hover:text-red-800 font-medium flex items-center gap-1 transition">
                       <i data-lucide="trash-2" class="w-4 h-4"></i> Hapus
                     </button>
                   </form>
+
                 </div>
               </td>
+              @endif
+
             </tr>
           @empty
             <tr>
@@ -139,39 +153,14 @@
       </table>
     </div>
 
-    {{-- Footer --}}
     <footer class="text-center text-gray-500 text-sm mt-8">
-      &copy; {{ date('Y') }} - Sistem Data Mahasiswa | 
+      &copy; {{ date('Y') }} - Sistem Data Mahasiswa |
       <span class="font-medium text-gray-600">Trio Suro Wibowo</span>
     </footer>
   </div>
 
   <script>
     lucide.createIcons();
-
-    document.addEventListener('DOMContentLoaded', function () {
-      const fakultasSelect = document.querySelector('select[name="fakultas_id"]');
-      const prodiSelect = document.querySelector('select[name="prodi_id"]');
-
-      fakultasSelect.addEventListener('change', function () {
-        const fakultasId = this.value;
-        prodiSelect.innerHTML = '<option value="">Semua Prodi</option>';
-
-        if (fakultasId) {
-          fetch(`/get-prodi/${fakultasId}`)
-            .then(response => response.json())
-            .then(data => {
-              data.forEach(prodi => {
-                const option = document.createElement('option');
-                option.value = prodi.id;
-                option.textContent = prodi.nama_prodi;
-                prodiSelect.appendChild(option);
-              });
-            })
-            .catch(error => console.error('Gagal memuat data prodi:', error));
-        }
-      });
-    });
   </script>
 
 </body>

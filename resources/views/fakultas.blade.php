@@ -18,14 +18,13 @@
         Daftar Fakultas
       </h1>
 
-      {{-- Tombol kembali --}}
       <a href="{{ route('mahasiswa.index') }}" 
          class="bg-gray-100 hover:bg-gray-200 text-blue-800 px-4 py-2 rounded-lg shadow-sm flex items-center gap-2 transition">
         <i data-lucide="arrow-left" class="w-5 h-5"></i> Kembali ke Mahasiswa
       </a>
     </div>
 
-    {{-- Pesan sukses --}}
+    {{-- Message Success --}}
     @if (session('success'))
       <div class="bg-green-50 border border-green-400 text-green-700 px-4 py-3 rounded-md mb-6 flex items-center shadow-sm">
         <i data-lucide="check-circle" class="w-5 h-5 mr-2 text-green-600"></i>
@@ -33,7 +32,7 @@
       </div>
     @endif
 
-    {{-- Validasi error --}}
+    {{-- Error --}}
     @if ($errors->any())
       <div class="bg-red-50 border border-red-400 text-red-600 px-4 py-3 rounded-md mb-6 shadow-sm">
         <div class="flex items-center gap-2 mb-1">
@@ -48,37 +47,69 @@
       </div>
     @endif
 
-    {{-- Form Tambah Fakultas --}}
+    {{-- FORM PENCARIAN (USER SAJA) --}}
+    @if (auth()->user()->role !== 'admin')
     <div class="bg-white p-5 rounded-xl shadow-md border border-gray-200 mb-8">
-      <form action="{{ route('fakultas.store') }}" method="POST" class="flex flex-col sm:flex-row items-center justify-between gap-4">
+      <form method="GET" action="{{ route('fakultas.index') }}" 
+            class="flex flex-wrap items-center gap-3">
+
+        <input type="text" name="search" value="{{ request('search') }}"
+               placeholder="Cari nama fakultas..."
+               class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 w-full sm:w-64">
+
+        <button type="submit"
+                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200 shadow-sm flex items-center gap-2">
+          <i data-lucide="search" class="w-4 h-4"></i> Cari
+        </button>
+
+      </form>
+    </div>
+    @endif
+
+    {{-- FORM TAMBAH (ADMIN SAJA) --}}
+    @if (auth()->user()->role === 'admin')
+    <div class="bg-white p-5 rounded-xl shadow-md border border-gray-200 mb-8">
+      <form action="{{ route('fakultas.store') }}" method="POST" 
+            class="flex flex-col sm:flex-row items-center justify-between gap-4">
         @csrf
-        <input type="text" name="nama_fakultas" value="{{ old('nama_fakultas') }}" placeholder="Masukkan nama fakultas..."
+
+        <input type="text" name="nama_fakultas" value="{{ old('nama_fakultas') }}" 
+               placeholder="Masukkan nama fakultas..."
                class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 w-full sm:w-2/3">
 
         <button type="submit"
                 class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition duration-200 shadow-sm flex items-center gap-2">
           <i data-lucide="plus-circle" class="w-5 h-5"></i> Tambah Fakultas
         </button>
+
       </form>
     </div>
+    @endif
 
-    {{-- Tabel Daftar Fakultas --}}
+    {{-- TABLE --}}
     <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
       <table class="min-w-full">
         <thead class="bg-blue-700 text-white uppercase text-sm">
           <tr>
             <th class="px-6 py-3 text-left font-semibold">ID</th>
             <th class="px-6 py-3 text-left font-semibold">Nama Fakultas</th>
-            <th class="px-6 py-3 text-center font-semibold">Aksi</th>
+
+            @if (auth()->user()->role === 'admin')
+              <th class="px-6 py-3 text-center font-semibold">Aksi</th>
+            @endif
           </tr>
         </thead>
+
         <tbody class="divide-y divide-gray-100">
           @forelse ($fakultas as $f)
             <tr class="hover:bg-blue-50 transition duration-150">
               <td class="px-6 py-3">{{ $f->id }}</td>
               <td class="px-6 py-3">{{ $f->nama_fakultas }}</td>
+
+              @if (auth()->user()->role === 'admin')
               <td class="px-6 py-3 text-center">
                 <div class="flex justify-center items-center gap-4">
+
                   {{-- Edit --}}
                   <a href="{{ route('fakultas.edit', $f->id) }}" 
                      class="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 transition">
@@ -87,15 +118,18 @@
 
                   {{-- Hapus --}}
                   <form action="{{ route('fakultas.destroy', $f->id) }}" method="POST"
-                        onsubmit="return confirm('Yakin ingin menghapus fakultas ini?')" class="inline-block">
+                        onsubmit="return confirm('Yakin ingin menghapus fakultas ini?')">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="text-red-600 hover:text-red-800 font-medium flex items-center gap-1 transition">
+                    <button class="text-red-600 hover:text-red-800 font-medium flex items-center gap-1 transition">
                       <i data-lucide="trash-2" class="w-4 h-4"></i> Hapus
                     </button>
                   </form>
+
                 </div>
               </td>
+              @endif
+
             </tr>
           @empty
             <tr>
@@ -106,7 +140,6 @@
       </table>
     </div>
 
-    {{-- Footer --}}
     <footer class="text-center text-gray-500 text-sm mt-8">
       &copy; {{ date('Y') }} - Sistem Data Mahasiswa | 
       <span class="font-medium text-gray-600">Trio Suro Wibowo</span>
